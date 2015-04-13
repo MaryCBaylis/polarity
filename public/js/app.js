@@ -5,12 +5,13 @@ window.onload = function() {
 
 
   function preload() {
-    game.world.setBounds(0,0,1280, 1280);
+    game.world.setBounds(0,0,2560, 1280);
     game.load.image('sky', 'images/sky.png');
     game.load.image('ground', 'images/platform.png');
     game.load.image('star', 'images/star.png');
     game.load.spritesheet('po', 'images/Po.png', 24, 32);
     game.load.image('redNode', 'images/redNode.png');
+    game.load.image('blueNode', 'images/blueNode.png');
     game.load.image('coi', 'images/coi.png');
 
   }
@@ -18,6 +19,8 @@ window.onload = function() {
   var platforms;
   var redNodes;
   var blueNodes;
+  var redKeys;
+  var blueKeys;
   var coi;
   var player;
   var alreadyJumped = false;
@@ -47,10 +50,15 @@ window.onload = function() {
 
     redNodes = game.add.group();
     blueNodes = game.add.group();
+    redKeys = game.add.group();
+    blueKeys = game.add.group();
 
     redNodes.enableBody = true;
     //var node = redNodes.create(100, game.world.height - 100, 'redNode');
     var node = redNodes.create(100, game.world.height - 250, 'redNode');
+
+    blueNodes.enableBody = true;
+    node = blueNodes.create(400, 200, 'blueNode');
     
     // node = game.add.sprite(100, game.world.height - 100, 'redNode');
     // game.physics.arcade.enable(node);
@@ -76,6 +84,7 @@ window.onload = function() {
 
   function update() {
     game.physics.arcade.collide(player, platforms);
+    player.body.gravity.y = 600;
 
     //var cursors = game.input.keyboard.createCursorKeys();
 
@@ -171,15 +180,26 @@ window.onload = function() {
 
   function attract(coi, node) {
     console.log('hit')
-    player.body.velocity.x += (playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    player.body.velocity.x += (0.5 * playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
     console.log(3 * playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)))
-    player.body.velocity.y += (playerSpeed * (node.body.y - player.body.y)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    player.body.velocity.y += (0.5 * playerSpeed * (node.body.y - player.body.y)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    game.physics.arcade.overlap(player, node, stick, null, this);
+    //player.body.gravity.y = 200;
   }
 
   function repel(coi, node){
     player.body.velocity.x -= (playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
     console.log(3 * playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)))
     player.body.velocity.y -= (playerSpeed * (node.body.y - player.body.y)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    game.physics.arcade.overlap(player, node, stick, null, this);
+    //player.body.gravity.y = 200;
+  }
+
+  function stick(player, node) {
+    player.body.x = node.body.x - player.body.width/2;
+    player.body.velocity.x = 0;
+    player.body.y = node.body.y - player.body.height/2;
+    player.body.velocity.y = 0;
   }
 };
 
