@@ -3,116 +3,103 @@ window.onload = function() {
 
   var game = new Phaser.Game(800, 500, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
-  function preload() {
 
+  function preload() {
+    game.world.setBounds(0,0,1280, 1280);
     game.load.image('sky', 'images/sky.png');
     game.load.image('ground', 'images/platform.png');
     game.load.image('star', 'images/star.png');
-    game.load.spritesheet('dude', 'images/Po.png', 24, 32);
+    game.load.spritesheet('po', 'images/Po.png', 24, 32);
+    game.load.image('redNode', 'images/redNode.png');
+    game.load.image('coi', 'images/coi.png');
 
   }
 
   var platforms;
+  var redNodes;
+  var blueNodes;
+  var coi;
   var player;
   var alreadyJumped = false;
   var facingLeft = true;
+  var playerSpeed = 150;
 
   function create() {
 
-      //  We're going to be using physics, so enable the Arcade Physics system
-      game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.physics.startSystem(Phaser.Physics.ARCADE);
 
-      //  A simple background for our game
-      game.add.sprite(0, 0, 'sky');
+    sky = game.add.sprite(0, 0, 'sky');
+    sky.width = game.world.width;
+    sky.height = game.world.height;
 
-      //  The platforms group contains the ground and the 2 ledges we can jump on
-      platforms = game.add.group();
+    platforms = game.add.group();
+    platforms.enableBody = true;
 
-      //  We will enable physics for any object that is created in this group
-      platforms.enableBody = true;
+    var ground = platforms.create(0, game.world.height - 64, 'ground');
+    ground.scale.setTo(2, 2);
+    ground.width = game.world.width;
+    ground.body.immovable = true;
 
-      // Here we create the ground.
-      var ground = platforms.create(0, game.world.height - 64, 'ground');
+    var ledge = platforms.create(400, 400, 'ground');
+    ledge.body.immovable = true;
+    ledge = platforms.create(-150, 250, 'ground');
+    ledge.body.immovable = true;
 
-      //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-      ground.scale.setTo(2, 2);
+    redNodes = game.add.group();
+    blueNodes = game.add.group();
 
-      //  This stops it from falling away when you jump on it
-      ground.body.immovable = true;
+    redNodes.enableBody = true;
+    //var node = redNodes.create(100, game.world.height - 100, 'redNode');
+    var node = redNodes.create(100, game.world.height - 250, 'redNode');
+    
+    // node = game.add.sprite(100, game.world.height - 100, 'redNode');
+    // game.physics.arcade.enable(node);
 
-      //  Now let's create two ledges
-      var ledge = platforms.create(400, 400, 'ground');
+    player = game.add.sprite(32, game.world.height - 150, 'po');
+    player.scale.x = 2;
+    player.scale.y = 2;
+    game.physics.arcade.enable(player);
+    player.body.gravity.y = 600;
+    player.body.collideWorldBounds = true;
+    player.animations.add('left', [110, 111, 112, 113], 10, true);
+    player.animations.add('right', [38, 39, 40, 41], 10, true);
+    game.camera.follow(player);
 
-      ledge.body.immovable = true;
+    coi = game.add.sprite(player.body.x - player.width/2, player.body.y - player.height/2, 'coi');
+    coi.scale.x = 2;
+    coi.scale.y = 2;
+    game.physics.arcade.enable(coi);
+    coi.exists = false;
 
-      ledge = platforms.create(-150, 250, 'ground');
-
-      ledge.body.immovable = true;
-
-      player = game.add.sprite(64, game.world.height - 150, 'dude');
-      player.scale.x = 2;
-      player.scale.y = 2;
-
-      //  We need to enable physics on the player
-      game.physics.arcade.enable(player);
-            player.body.facing = 1;
-
-      //  Player physics properties. Give the little guy a slight bounce.
-      // player.body.bounce.y = 0.2;
-      player.body.gravity.y = 600;
-      player.body.collideWorldBounds = true;
-
-      //  Our two animations, walking left and right.
-      player.animations.add('left', [110, 111, 112, 113], 10, true);
-      player.animations.add('right', [38, 39, 40, 41], 10, true);
-      player.animations.add('standingLeft', [108], 10, true);
-      player.animations.add('standingRight', [36], 10, true);
-      player.animations.add('jumpingLeft', [118], 10, true);
-      player.animations.add('jumpingRight', [0], 10, true);
-      player.animations.add('fallingLeft', [120], 10, true);
-      player.animations.add('fallingRight', [0], 10, true);
 
   }
 
   function update() {
-    console.log(player.body.facing)
     game.physics.arcade.collide(player, platforms);
 
-    var cursors = game.input.keyboard.createCursorKeys();
+    //var cursors = game.input.keyboard.createCursorKeys();
 
-    if (alreadyJumped && player.body.touching.down && !cursors.up.isDown) {
+    if (alreadyJumped && player.body.touching.down && !(game.input.keyboard.isDown(Phaser.Keyboard.UP))) {
       alreadyJumped = false;
     }
 
     player.body.velocity.x = 0;
 
-    if (cursors.left.isDown)
+    if (game.input.keyboard.isDown(Phaser.Keyboard.LEFT))
     {
         //  Move to the left
-        player.body.velocity.x = -150;
+        Math.max(player.body.velocity.x -= 100, playerSpeed);
         facingLeft = true;
     }
-    else if (cursors.right.isDown)
+    else if (game.input.keyboard.isDown(Phaser.Keyboard.RIGHT))
     {
         //  Move to the right
-        player.body.velocity.x = 150;
+        Math.min(player.body.velocity.x += 100, playerSpeed);
         facingLeft = false;
     }
-    // else
-    // {
-    //     //  Stand still
-    //     if (player.animations.currentAnim.name == 'left') {
-    //       // player.animations.play('standingLeft')
-    //       player.frame = 108
-    //     }
-    //     else if (player.animations.currentAnim.name == 'right') {
-    //       // player.animations.play('standingRight')
-    //       player.frame = 36
-    //     }
-    // }
 
-    //  Allow the player to jump if they are touching the ground.
-    if (cursors.up.isDown && player.body.touching.down && !alreadyJumped)
+    //  Allow the player to jump if they are touching the ground and have released the key from the last jump.
+    if (game.input.keyboard.isDown(Phaser.Keyboard.UP) && player.body.touching.down && !alreadyJumped)
     {
         alreadyJumped = true;
         player.body.velocity.y = -350;
@@ -158,15 +145,41 @@ window.onload = function() {
         }
       }  
     }
-    //standing still
-    // else {
-    //   if (player.body.facing == 1) {
-    //     player.frame = 121;
-    //   }
-    //   else {
 
-    //   } 
-    // }
+    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
+      coi.body.x = player.body.x - 3.5 * player.width;
+      coi.body.y = player.body.y - 2.5 * player.height;
+      coi.tint = 0xff0000;
+      coi.exists = true;
+
+      game.physics.arcade.overlap(coi, redNodes, attract, null, this);
+      game.physics.arcade.overlap(coi, blueNodes, repel, null, this);
+    }
+    else if (game.input.keyboard.isDown(Phaser.Keyboard.W)) {
+      coi.body.x = player.body.x - 3.5 * player.width;
+      coi.body.y = player.body.y - 2.5 * player.height;
+      coi.tint = 0x0000ff;
+      coi.exists = true;
+
+      game.physics.arcade.overlap(coi, redNodes, repel, null, this);
+      game.physics.arcade.overlap(coi, blueNodes, attract, null, this);
+    }
+    else {
+      coi.exists = false;
+    }
+  }
+
+  function attract(coi, node) {
+    console.log('hit')
+    player.body.velocity.x += (playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    console.log(3 * playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)))
+    player.body.velocity.y += (playerSpeed * (node.body.y - player.body.y)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+  }
+
+  function repel(coi, node){
+    player.body.velocity.x -= (playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
+    console.log(3 * playerSpeed * (node.body.x - player.body.x)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)))
+    player.body.velocity.y -= (playerSpeed * (node.body.y - player.body.y)/(Math.abs(node.body.x - player.body.x)+Math.abs(node.body.y - player.body.y)));
   }
 };
 
